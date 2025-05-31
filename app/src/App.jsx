@@ -1,35 +1,92 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [contacts, setContacts] = useState([]);
+  const [form, setForm] = useState({ name: '', email: '', phone: '' });
+  const [editId, setEditId] = useState(null);
+
+  // Fetch contacts on mount
+  useEffect(() => {
+    fetchContacts();
+  }, []);
+
+  const fetchContacts = async () => {
+    const res = await axios.get('http://localhost:5000/contacts');
+    setContacts(res.data);
+  };
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (editId) {
+      await axios.put(`http://localhost:5000/contacts/${editId}`, form);
+      setEditId(null);
+    } else {
+      await axios.post('http://localhost:5000/contacts', form);
+    }
+
+    setForm({ name: '', email: '', phone: '' });
+    fetchContacts();
+  };
+
+  const handleDelete = async (id) => {
+    await axios.delete(`http://localhost:5000/contacts/${id}`);
+    fetchContacts();
+  };
+
+  const handleEdit = (contact) => {
+    setForm({ name: contact.name, email: contact.email, phone: contact.phone });
+    setEditId(contact._id);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div style={{ maxWidth: 600, margin: 'auto' }}>
+      <h1>User Contact Manager</h1>
+
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Name"
+          name="name"
+          value={form.name}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          name="email"
+          value={form.email}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Phone"
+          name="phone"
+          value={form.phone}
+          onChange={handleChange}
+          required
+        />
+        <button type="submit">{editId ? 'Update' : 'Add'} Contact</button>
+      </form>
+
+      <ul>
+        {contacts.map((contact) => (
+          <li key={contact._id}>
+            {contact.name} - {contact.email} - {contact.phone}{' '}
+            <button onClick={() => handleEdit(contact)}>Edit</button>
+            <button onClick={() => handleDelete(contact._id)}>Delete</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
-export default App
+export default App;

@@ -1,1 +1,4 @@
-start app       npm run dev
+run app       npm run dev
+
+run server    nodemon index.js
+
